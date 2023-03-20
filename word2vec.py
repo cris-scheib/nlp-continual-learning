@@ -86,12 +86,11 @@ def print_some_batches():
     global sentence_cursors, tot_sentences
     global reverse_dictionary
 
-    for window_size in [1, 2]:
-        sentence_cursors = [0 for _ in range(tot_sentences)]
-        batch, labels = generate_batch_for_word2vec(batch_size=8, window_size=window_size, is_input=True)
-        print('\nwith window_size = %d:' % (window_size))
-        print('    batch:', [[reverse_dictionary[bii] for bii in bi] for bi in batch])
-        print('    labels:', [reverse_dictionary[li] for li in labels.reshape(8)])
+    sentence_cursors = [0 for _ in range(tot_sentences)]
+    batch, labels = generate_batch_for_word2vec(batch_size=8, window_size=2, is_input=True)
+    print('\nwith window_size = %d:' % (2))
+    print('    batch:', [[reverse_dictionary[bii] for bii in bi] for bi in batch])
+    print('    labels:', [reverse_dictionary[li] for li in labels.reshape(8)])
 
     sentence_cursors = [0 for _ in range(tot_sentences)]
 
@@ -171,7 +170,7 @@ def define_word2vec_tensorflow(batch_size):
     similarity = tf.matmul(valid_embeddings, tf.transpose(a=normalized_embeddings))
 
 
-def run_word2vec(batch_size):
+def run_word2vec(batch_size, num_steps = 100001):
     global embedding_size, window_size
     global valid_size, valid_window, valid_examples
     global num_sampled
@@ -181,8 +180,6 @@ def run_word2vec(batch_size):
     global loss, optimizer, similarity, normalized_embeddings
     global reverse_dictionary
     global vocabulary_size, embedding_size
-
-    num_steps = 1000
 
     config=tf.compat.v1.ConfigProto(allow_soft_placement=True) 
     config.gpu_options.allow_growth = True	
@@ -197,12 +194,12 @@ def run_word2vec(batch_size):
             feed_dict = {train_dataset: batch_data, train_labels: batch_labels}
             _, l = session.run([optimizer, loss], feed_dict=feed_dict)
             average_loss += l
-            if (step + 1) % 200 == 0:
+            if (step + 1) % 2000 == 0:
                 if step > 0:
                     average_loss = average_loss / 2000
                 print('Average loss at step %d: %f' % (step + 1, average_loss))
                 average_loss = 0
-            if (step + 1) % 1000 == 0:
+            if (step + 1) % 10000 == 0:
                 sim = similarity.eval()
                 for i in range(valid_size):
                     valid_word = reverse_dictionary[valid_examples[i]]
