@@ -6,3 +6,6 @@ TCCII/.ipynb_checkpoints
 TCCII/data
 TCCII/example
 
+TCCII/training_checkpoints
+TCCII/training_model.h5
+
