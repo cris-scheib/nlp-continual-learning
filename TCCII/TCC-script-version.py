@@ -161,8 +161,8 @@ questions_tensor, answers_tensor, tokenizer = load_dataset()
 max_length_input, max_length_target = questions_tensor.shape[1], answers_tensor.shape[1]
 input_train, input_test, target_train, target_test = train_test_split(questions_tensor, answers_tensor, test_size=0.2)
 
-print("Test count:", len(input_train))
-print("Train count:", len(input_test))
+print("Train count:", len(input_train))
+print("Test count:", len(input_test))
 
 
 # ### Setting the hyperparameter
@@ -434,11 +434,16 @@ with tf.device('/cpu:0'):
 
             # Compute the loss (per batch)
             total_loss += batch_loss
-
+            
         # Save (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
             checkpoint.save(file_prefix = checkpoint_prefix)
 
+        # Save the the loss in a file
+        lossLog = open("loss.txt", "a")
+        lossLog.write('{:.4f}\n'.format(total_loss / steps_per_epoch))
+        lossLog.close()
+        
         # Output the loss observed until that epoch
         print('Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / steps_per_epoch))
 
