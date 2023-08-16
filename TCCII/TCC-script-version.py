@@ -14,6 +14,7 @@ from sklearn.utils import shuffle
 import nltk
 import tensorflow as tf
 from tensorflow import keras
+from datetime import datetime
 from keras.layers import Input, GRU, Dense, Embedding
 from keras.utils import  pad_sequences
 from keras.preprocessing.text import Tokenizer
@@ -408,9 +409,10 @@ def train_step(inp, targ, enc_hidden):
 
 
 checkpoint_dir = './training_checkpoints'
-checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(optimizer=optimizer, encoder=encoder, decoder=decoder)
-checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+manager = tf.train.CheckpointManager(checkpoint, directory=checkpoint_dir, max_to_keep=10)
+checkpoint.restore(manager.latest_checkpoint)
+
 
 
 # In[25]:
@@ -418,8 +420,17 @@ checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 EPOCHS = 30
 
+
+infoLog = open("info.txt", "a")
+infoLog.write('File {}.csv\n'.format(filename))
+infoLog.write('Starting {}\n'.format(datetime.now()))
+infoLog.close()
+        
+        
 # Training loop
 with tf.device('/cpu:0'):
+
+
     for epoch in range(EPOCHS):
 
         # Initialize the hidden state
@@ -437,13 +448,21 @@ with tf.device('/cpu:0'):
             
         # Save (checkpoint) the model every 2 epochs
         if (epoch + 1) % 2 == 0:
-            checkpoint.save(file_prefix = checkpoint_prefix)
+            manager.save()
 
         # Save the the loss in a file
         lossLog = open("loss.txt", "a")
         lossLog.write('{:.4f}\n'.format(total_loss / steps_per_epoch))
         lossLog.close()
         
+        
+        
         # Output the loss observed until that epoch
         print('Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / steps_per_epoch))
+    
+    infoLog = open("info.txt", "a")
+    infoLog.write('Last Execution Loss {:.4f}\n'.format(total_loss / steps_per_epoch))
+    infoLog.write('Ended {}\n'.format(datetime.now()))
+    infoLog.write('-----------------------------------------------------------------------\n')
+    infoLog.close()
 
