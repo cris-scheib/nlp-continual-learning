@@ -31,7 +31,7 @@ deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 
 arguments = sys.argv
-filename = arguments[1] if len(arguments) > 1 else 'dataset-1k-1'
+filename = arguments[1] if len(arguments) > 1 else 'dataset-5k-1'
 print("Working on: ", f'data/fraction/{filename}.csv')
 
 # In[3]:
@@ -46,7 +46,7 @@ def load_data():
 
 def load_vocabulary():
     vocabulary = list()
-    with open('data/vocab.30K.txt', encoding='utf-8') as f:
+    with open('data/vocab-30k.txt', encoding='utf-8') as f:
         for line in f:
             vocabulary.append(line.strip())
     return vocabulary
