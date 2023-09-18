@@ -62,9 +62,11 @@ def lower_data(data):
     return data.str.lower() 
     
 def clean_data(data):
-    return data.str.replace(',', ' ,')                \
+    return data.str.replace(',', ' , ')                \
                 .str.replace('.',' . ', regex=False)  \
-                .str.replace('?',' ?', regex=False)   \
+                .str.replace('?',' ? ', regex=False)   \
+                .str.replace("''",' ', regex=False)   \
+                .str.replace(r"(\s)'|'(\s)",' ', regex=True) \
                 .str.replace(r"[^a-zA-Z0-9?'.,]+",' ',regex=True)
 
 def get_data():
@@ -172,7 +174,7 @@ print("Test count:", len(input_test))
 
 
 BUFFER_SIZE = len(input_train)
-BATCH_SIZE = 64
+BATCH_SIZE = 8
 steps_per_epoch = len(input_train)//BATCH_SIZE
 embedding_dim = 256
 units = 1024
