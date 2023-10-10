@@ -176,6 +176,7 @@ print("Test count:", len(input_test))
 BUFFER_SIZE = len(input_train)
 BATCH_SIZE = 8
 steps_per_epoch = len(input_train)//BATCH_SIZE
+steps_per_epoch_test = len(input_test)//BATCH_SIZE
 embedding_dim = 256
 units = 1024
 vocab_input_size = len(tokenizer.word_index) + 1
@@ -187,7 +188,8 @@ vocab_target_size = len(tokenizer.word_index) + 1
 
 dataset = tf.data.Dataset.from_tensor_slices((input_train, target_train)).shuffle(BUFFER_SIZE)
 dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
-
+dataset_test = tf.data.Dataset.from_tensor_slices((input_test, target_test)).shuffle(BUFFER_SIZE)
+dataset_test = dataset_test.batch(BATCH_SIZE, drop_remainder=True)
 
 # In[15]:
 
@@ -409,6 +411,40 @@ def train_step(inp, targ, enc_hidden):
 
 # In[24]:
 
+@tf.function
+def test_step(inp, targ, enc_hidden):
+    loss = 0
+
+    # tf.GradientTape() -- record operations for automatic differentiation
+    with tf.GradientTape() as tape:
+        enc_output, enc_hidden = encoder(inp, enc_hidden)
+
+        # dec_hidden is used by attention, hence is the same enc_hidden
+        dec_hidden = enc_hidden
+
+        # <start> token is the initial decoder input
+        dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * BATCH_SIZE, 1)
+
+        # Teacher forcing - feeding the target as the next input
+        for t in range(1, targ.shape[1]):
+
+            # Pass enc_output to the decoder
+            predictions, dec_hidden, _ = decoder(dec_input, dec_hidden, enc_output)
+
+            # Compute the loss
+            loss += loss_function(targ[:, t], predictions)
+
+            # Use teacher forcing
+            dec_input = tf.expand_dims(targ[:, t], 1)
+
+    # As this function is called per batch, compute the batch_loss
+    batch_loss = (loss / int(targ.shape[1]))
+
+    return batch_loss
+
+
+# In[25]:
+
 
 checkpoint_dir = './training_checkpoints'
 checkpoint = tf.train.Checkpoint(optimizer=optimizer, encoder=encoder, decoder=decoder)
@@ -417,7 +453,7 @@ checkpoint.restore(manager.latest_checkpoint)
 
 
 
-# In[25]:
+# In[26]:
 
 
 EPOCHS = 30
@@ -434,6 +470,8 @@ with tf.device('/cpu:0'):
 
 
     for epoch in range(EPOCHS):
+
+        # ============================= TRAIN PHASE ==================================
 
         # Initialize the hidden state
         enc_hidden = encoder.initialize_hidden_state()
@@ -458,12 +496,33 @@ with tf.device('/cpu:0'):
         lossLog.close()
         
         
-        
         # Output the loss observed until that epoch
-        print('Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / steps_per_epoch))
-    
+        print('Train Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / ))
+
+
+        # ============================= TEST PHASE ==================================
+
+        # Initialize the hidden state
+        enc_test_hidden = encoder.initialize_hidden_state() 
+        total_test_loss = 0
+
+        for (batch_test, (inp_test, targ_test)) in enumerate(dataset_test.take(steps_per_epoch_test)):
+
+            # Call the test method
+            batch_test_loss = test_step(inp_test, targ_test, enc_test_hidden)
+
+            # Compute the loss (per batch)
+            total_test_loss += batch_test_loss
+        
+        # Save the the loss in a file
+        testLossLog = open("test_loss.txt", "a")
+        testLossLog.write('{:.4f}\n'.format(total_test_loss / steps_per_epoch_test))
+        testLossLog.close()            
+
+
     infoLog = open("info.txt", "a")
-    infoLog.write('Last Execution Loss {:.4f}\n'.format(total_loss / steps_per_epoch))
+    infoLog.write('Last Train Execution Loss {:.4f}\n'.format(total_loss / steps_per_epoch))
+    infoLog.write('Last Test Execution Loss {:.4f}\n'.format(total_test_loss / steps_per_epoch_test))
     infoLog.write('Ended {}\n'.format(datetime.now()))
     infoLog.write('-----------------------------------------------------------------------\n')
     infoLog.close()
