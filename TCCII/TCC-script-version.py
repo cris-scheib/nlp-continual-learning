@@ -413,34 +413,33 @@ def train_step(inp, targ, enc_hidden):
 
 @tf.function
 def test_step(inp, targ, enc_hidden):
-    loss = 0
 
-    # tf.GradientTape() -- record operations for automatic differentiation
-    with tf.GradientTape() as tape:
-        enc_output, enc_hidden = encoder(inp, enc_hidden)
+    test_loss = 0
 
-        # dec_hidden is used by attention, hence is the same enc_hidden
-        dec_hidden = enc_hidden
+    enc_output, enc_hidden = encoder(inp, enc_hidden)
 
-        # <start> token is the initial decoder input
-        dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * BATCH_SIZE, 1)
+    # dec_hidden is used by attention, hence is the same enc_hidden
+    dec_hidden = enc_hidden
 
-        # Teacher forcing - feeding the target as the next input
-        for t in range(1, targ.shape[1]):
+    # <start> token is the initial decoder input
+    dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * BATCH_SIZE, 1)
 
-            # Pass enc_output to the decoder
-            predictions, dec_hidden, _ = decoder(dec_input, dec_hidden, enc_output)
+    # Teacher forcing - feeding the target as the next input
+    for t in range(1, targ.shape[1]):
 
-            # Compute the loss
-            loss += loss_function(targ[:, t], predictions)
+        # Pass enc_output to the decoder
+        predictions, dec_hidden, _ = decoder(dec_input, dec_hidden, enc_output)
 
-            # Use teacher forcing
-            dec_input = tf.expand_dims(targ[:, t], 1)
+        # Compute the loss
+        test_loss += loss_function(targ[:, t], predictions)
 
-    # As this function is called per batch, compute the batch_loss
-    batch_loss = (loss / int(targ.shape[1]))
+        # Use teacher forcing
+        dec_input = tf.expand_dims(targ[:, t], 1)
 
-    return batch_loss
+    # As this function is called per batch, compute the test_batch_loss
+    test_batch_loss = (test_loss / int(targ.shape[1]))
+
+    return test_batch_loss
 
 
 # In[25]:
@@ -497,7 +496,7 @@ with tf.device('/cpu:0'):
         
         
         # Output the loss observed until that epoch
-        print('Train Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / ))
+        print('Train Epoch {} Loss {:.4f}'.format(epoch + 1, total_loss / steps_per_epoch))
 
 
         # ============================= TEST PHASE ==================================
