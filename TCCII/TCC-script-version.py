@@ -31,14 +31,14 @@ deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 
 arguments = sys.argv
-filename = arguments[1] if len(arguments) > 1 else 'dataset-5k-1'
-print("Working on: ", f'data/fraction/{filename}.csv')
+filename = arguments[1] if len(arguments) > 1 else 'dataset-3k-1'
+print("Working on: ", f'data/clean/{filename}.csv')
 
 # In[3]:
 
 
 def load_data():
-    return pd.read_csv(f'data/fraction/{filename}.csv')
+    return pd.read_csv(f'data/clean/{filename}.csv')
 
 
 # In[4]:
@@ -455,7 +455,7 @@ checkpoint.restore(manager.latest_checkpoint)
 # In[26]:
 
 
-EPOCHS = 30
+EPOCHS = 60
 
 
 infoLog = open("info.txt", "a")
@@ -486,7 +486,7 @@ with tf.device('/cpu:0'):
             total_loss += batch_loss
             
         # Save (checkpoint) the model every 2 epochs
-        if (epoch + 1) % 2 == 0:
+        if (epoch + 1) % 5 == 0:
             manager.save()
 
         # Save the the loss in a file
