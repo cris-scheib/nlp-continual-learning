@@ -1,4 +1,4 @@
-# Continuous Learning Applied to the Development of a Chatbot Based on Sequence-To-Sequence Architecture
+# Continuous learning applied to the development of a Chatbot based on Sequence-To-Sequence architecture
 
 The evolution of chatbot tools offers significant opportunities, enabling interactive interactions beneficial to businesses and customers. 
 Research outside of Natural Language Processing helps improve the accuracy of these tools, but the volatility of the language presents major challenges, requiring ongoing training to avoid obsolescence. 
